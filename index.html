@@ -1,0 +1,729 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-774DT6CW0W"></script>
+    <script>
+      window.dataLayer = window.dataLayer || [];
+      function gtag(){dataLayer.push(arguments);}
+      gtag('js', new Date());
+      gtag('config', 'G-774DT6CW0W');
+    </script>
+
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TableSnap Pro v2.0 | Webの表を Excel / Markdown へ一発コピー</title>
+    <meta name="description" content="Chrome拡張 TableSnap Pro v2.0。Web上のテーブルをワンクリックで Excel (TSV) または Markdown 形式にコピー。Obsidian・AI・Notion 向け。すべて端末内で処理。">
+    <meta property="og:title" content="TableSnap Pro v2.0">
+    <meta property="og:description" content="Webの表を Obsidian や Excel に崩れずコピー。Markdown 出力に対応した Chrome 拡張。">
+    <meta property="og:type" content="website">
+    <link rel="icon" href="favicon.png" type="image/png">
+
+    <style>
+        :root {
+            --primary: #0f2942;
+            --accent: #0d9488;
+            --accent-light: #ccfbf1;
+            --markdown: #6366f1;
+            --excel: #059669;
+            --bg: #f0fdfa;
+            --bg-white: #ffffff;
+            --text: #1e293b;
+            --text-muted: #64748b;
+            --border: #e2e8f0;
+            --shadow: 0 4px 24px rgba(15, 41, 66, 0.08);
+        }
+
+        * { box-sizing: border-box; }
+
+        body {
+            margin: 0;
+            font-family: "Segoe UI", "Hiragino Sans", "BIZ UDPGothic", sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            line-height: 1.75;
+        }
+
+        .container {
+            max-width: 1040px;
+            margin: 0 auto;
+            padding: 0 24px;
+        }
+
+        /* Language switch */
+        .lang-switch {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            z-index: 1000;
+            background: rgba(255, 255, 255, 0.95);
+            padding: 4px;
+            border-radius: 999px;
+            box-shadow: var(--shadow);
+            display: flex;
+            border: 1px solid var(--border);
+        }
+
+        .lang-btn {
+            border: none;
+            background: none;
+            padding: 8px 16px;
+            border-radius: 999px;
+            cursor: pointer;
+            font-weight: 700;
+            font-size: 0.75rem;
+            color: var(--text-muted);
+        }
+
+        .lang-btn.active {
+            background: var(--primary);
+            color: #fff;
+        }
+
+        .lang-en { display: none; }
+        html[lang="en"] .lang-ja { display: none; }
+        html[lang="en"] .lang-en { display: block; }
+        html[lang="en"] span.lang-en { display: inline; }
+        html[lang="ja"] span.lang-en { display: none; }
+        html[lang="en"] span.lang-ja { display: none; }
+        span.lang-ja, span.lang-en { display: inline; }
+
+        /* Header / Hero */
+        header {
+            padding: 96px 0 72px;
+            text-align: center;
+            background: linear-gradient(165deg, #fff 0%, var(--bg) 55%, #ecfeff 100%);
+        }
+
+        .logo-row {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 14px;
+            margin-bottom: 20px;
+        }
+
+        .logo-row img {
+            width: 56px;
+            height: 56px;
+            border-radius: 14px;
+            box-shadow: var(--shadow);
+        }
+
+        .version-badge {
+            display: inline-block;
+            background: var(--accent-light);
+            color: var(--accent);
+            font-size: 0.8rem;
+            font-weight: 800;
+            padding: 6px 16px;
+            border-radius: 999px;
+            letter-spacing: 0.06em;
+            margin-bottom: 16px;
+        }
+
+        .hero h1 {
+            font-size: clamp(2rem, 5vw, 3.2rem);
+            color: var(--primary);
+            margin: 0 0 16px;
+            line-height: 1.25;
+            letter-spacing: -0.02em;
+        }
+
+        .hero .lead {
+            font-size: 1.15rem;
+            color: var(--text-muted);
+            max-width: 640px;
+            margin: 0 auto 32px;
+        }
+
+        .hero-cta {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 12px;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 16px 32px;
+            border-radius: 999px;
+            font-weight: 700;
+            text-decoration: none;
+            transition: transform 0.15s, box-shadow 0.15s;
+            font-size: 1rem;
+        }
+
+        .btn-primary {
+            background: var(--accent);
+            color: #fff;
+            box-shadow: 0 8px 24px rgba(13, 148, 136, 0.35);
+        }
+
+        .btn-primary:hover { transform: translateY(-2px); }
+
+        .btn-secondary {
+            background: var(--bg-white);
+            color: var(--primary);
+            border: 2px solid var(--border);
+        }
+
+        .btn-secondary:hover { border-color: var(--accent); color: var(--accent); }
+
+        /* Extension UI mock */
+        .ui-mock-wrap {
+            margin-top: 48px;
+            display: flex;
+            justify-content: center;
+            align-items: flex-start;
+            gap: 32px;
+            flex-wrap: wrap;
+        }
+
+        .popup-mock {
+            background: var(--bg-white);
+            border-radius: 16px;
+            padding: 20px;
+            box-shadow: 0 20px 50px rgba(15, 41, 66, 0.12);
+            border: 1px solid var(--border);
+            width: 280px;
+            text-align: left;
+        }
+
+        .popup-mock h3 {
+            margin: 0 0 12px;
+            font-size: 0.85rem;
+            color: var(--text-muted);
+            font-weight: 600;
+        }
+
+        .format-toggle {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 8px;
+            margin-bottom: 16px;
+        }
+
+        .format-btn {
+            padding: 10px;
+            border-radius: 10px;
+            font-size: 0.8rem;
+            font-weight: 700;
+            text-align: center;
+            border: 2px solid var(--border);
+        }
+
+        .format-btn.excel { border-color: var(--excel); background: #ecfdf5; color: var(--excel); }
+        .format-btn.md { border-color: var(--markdown); background: #eef2ff; color: var(--markdown); }
+
+        .mode-list {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+
+        .mode-item {
+            padding: 8px 12px;
+            background: #f8fafc;
+            border-radius: 8px;
+            font-size: 0.78rem;
+            color: var(--text);
+        }
+
+        .mode-item.active {
+            background: var(--accent-light);
+            color: var(--accent);
+            font-weight: 700;
+        }
+
+        /* Sections */
+        section { padding: 72px 0; }
+
+        .section-title {
+            text-align: center;
+            font-size: clamp(1.5rem, 3vw, 2rem);
+            color: var(--primary);
+            margin: 0 0 12px;
+        }
+
+        .section-sub {
+            text-align: center;
+            color: var(--text-muted);
+            margin: 0 auto 48px;
+            max-width: 560px;
+        }
+
+        .feature-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 24px;
+        }
+
+        .feature-card {
+            background: var(--bg-white);
+            border-radius: 20px;
+            padding: 28px;
+            box-shadow: var(--shadow);
+            border: 1px solid var(--border);
+        }
+
+        .feature-card .icon {
+            font-size: 2rem;
+            margin-bottom: 12px;
+            display: block;
+        }
+
+        .feature-card h3 {
+            margin: 0 0 8px;
+            font-size: 1.1rem;
+            color: var(--primary);
+        }
+
+        .feature-card p {
+            margin: 0;
+            font-size: 0.95rem;
+            color: var(--text-muted);
+        }
+
+        /* Steps */
+        .steps {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+            gap: 24px;
+            counter-reset: step;
+        }
+
+        .step-card {
+            background: var(--bg-white);
+            border-radius: 20px;
+            padding: 28px;
+            border: 1px solid var(--border);
+            position: relative;
+            padding-top: 48px;
+        }
+
+        .step-card::before {
+            counter-increment: step;
+            content: counter(step);
+            position: absolute;
+            top: 20px;
+            left: 28px;
+            width: 32px;
+            height: 32px;
+            background: var(--accent);
+            color: #fff;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 800;
+            font-size: 0.9rem;
+        }
+
+        .step-card h3 { margin: 0 0 8px; color: var(--primary); font-size: 1.05rem; }
+        .step-card p { margin: 0; color: var(--text-muted); font-size: 0.92rem; }
+
+        /* Demo table */
+        .demo-section {
+            background: var(--bg-white);
+            border-top: 1px solid var(--border);
+            border-bottom: 1px solid var(--border);
+        }
+
+        .demo-box {
+            background: #f8fafc;
+            border: 2px dashed var(--border);
+            border-radius: 16px;
+            padding: 24px;
+            overflow-x: auto;
+        }
+
+        .demo-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.9rem;
+            background: #fff;
+            box-shadow: var(--shadow);
+        }
+
+        .demo-table th,
+        .demo-table td {
+            border: 1px solid var(--border);
+            padding: 12px 16px;
+            text-align: left;
+        }
+
+        .demo-table th {
+            background: var(--primary);
+            color: #fff;
+            font-weight: 600;
+        }
+
+        .demo-table tr:nth-child(even) td { background: #f1f5f9; }
+
+        .demo-hint {
+            margin-top: 16px;
+            font-size: 0.88rem;
+            color: var(--text-muted);
+            text-align: center;
+        }
+
+        .md-preview {
+            margin-top: 24px;
+            background: #1e293b;
+            color: #e2e8f0;
+            border-radius: 12px;
+            padding: 20px;
+            font-family: "SF Mono", "Consolas", monospace;
+            font-size: 0.82rem;
+            line-height: 1.6;
+            overflow-x: auto;
+        }
+
+        .md-preview .comment { color: #94a3b8; }
+
+        /* Audience tags */
+        .tag-grid {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            justify-content: center;
+        }
+
+        .tag {
+            background: var(--bg-white);
+            border: 1px solid var(--border);
+            padding: 10px 18px;
+            border-radius: 999px;
+            font-size: 0.88rem;
+            font-weight: 600;
+            color: var(--primary);
+        }
+
+        /* CTA block */
+        .cta-block {
+            background: linear-gradient(135deg, var(--primary) 0%, #0d9488 100%);
+            color: #fff;
+            border-radius: 28px;
+            padding: 56px 32px;
+            text-align: center;
+            box-shadow: 0 20px 50px rgba(15, 41, 66, 0.2);
+        }
+
+        .cta-block h2 { margin: 0 0 12px; font-size: 1.75rem; }
+        .cta-block p { margin: 0 0 28px; opacity: 0.9; }
+        .cta-block .btn-primary { background: #fff; color: var(--primary); box-shadow: none; }
+        .cta-block .note-link { color: #a7f3d0; margin-top: 20px; display: inline-block; }
+
+        footer {
+            padding: 48px 0;
+            text-align: center;
+            border-top: 1px solid var(--border);
+        }
+
+        footer p { margin: 0; color: var(--text-muted); font-size: 0.9rem; }
+
+        .footer-links {
+            margin-top: 16px;
+            display: flex;
+            justify-content: center;
+            gap: 20px;
+            flex-wrap: wrap;
+        }
+
+        .footer-links a {
+            color: var(--primary);
+            font-weight: 700;
+            text-decoration: none;
+            font-size: 0.9rem;
+        }
+
+        .footer-links a:hover { color: var(--accent); }
+
+        .btn-inline {
+            background: none;
+            border: none;
+            color: var(--text-muted);
+            text-decoration: underline;
+            cursor: pointer;
+            font-size: 0.85rem;
+        }
+
+        #policy-box {
+            display: none;
+            text-align: left;
+            background: var(--bg-white);
+            padding: 32px;
+            border-radius: 16px;
+            margin: 24px auto 0;
+            max-width: 640px;
+            box-shadow: var(--shadow);
+        }
+
+        @media (max-width: 640px) {
+            header { padding-top: 72px; }
+            .lang-switch { top: 12px; right: 12px; }
+            .hero-cta { flex-direction: column; }
+            .btn { width: 100%; justify-content: center; }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="lang-switch">
+        <button type="button" onclick="setLang('ja')" id="btn-ja" class="lang-btn active">JP</button>
+        <button type="button" onclick="setLang('en')" id="btn-en" class="lang-btn">EN</button>
+    </div>
+
+    <header class="container hero">
+        <div class="logo-row">
+            <img src="images/icon128.png" width="56" height="56" alt="TableSnap Pro">
+        </div>
+        <span class="version-badge">
+            <span class="lang-ja">v2.0 — Markdown 対応</span>
+            <span class="lang-en">v2.0 — Markdown Support</span>
+        </span>
+        <h1>
+            <span class="lang-ja">Webの表を、<br>Obsidian も Excel も一発コピー</span>
+            <span class="lang-en">Copy Web Tables Instantly<br>to Obsidian &amp; Excel</span>
+        </h1>
+        <p class="lead lang-ja">
+            崩れたコピペはもう終わり。TableSnap Pro は Web 上のテーブルを
+            <strong>Excel (TSV)</strong> または <strong>Markdown</strong> 形式で
+            ワンクリック。すべて端末内で処理します。
+        </p>
+        <p class="lead lang-en">
+            Stop fighting broken copy-paste. TableSnap Pro copies web tables as
+            <strong>Excel (TSV)</strong> or <strong>Markdown</strong> in one click.
+            All processing stays on your device.
+        </p>
+        <div class="hero-cta">
+            <a class="btn btn-primary" href="https://chromewebstore.google.com/detail/tablesnap-pro/lhkdcojfnpencjimnbkhbigkjbnpdjdg" target="_blank" rel="noopener">
+                <span class="lang-ja">Chrome に無料インストール</span>
+                <span class="lang-en">Install Free on Chrome</span>
+            </a>
+            <a class="btn btn-secondary" href="https://note.com/ktech_dev/m/mfb632f0481c2" target="_blank" rel="noopener">
+                <span class="lang-ja">活用ガイド (note)</span>
+                <span class="lang-en">Usage Guide (note)</span>
+            </a>
+        </div>
+
+        <div class="ui-mock-wrap">
+            <div class="popup-mock">
+                <h3>TableSnap Pro</h3>
+                <div class="format-toggle">
+                    <div class="format-btn excel">Excel</div>
+                    <div class="format-btn md">Markdown</div>
+                </div>
+                <div class="mode-list">
+                    <div class="mode-item active lang-ja">① テーブル全体</div>
+                    <div class="mode-item active lang-en">① Full table</div>
+                    <div class="mode-item lang-ja">② 行（ドラッグで複数行）</div>
+                    <div class="mode-item lang-en">② Rows (drag to select)</div>
+                    <div class="mode-item lang-ja">③ 列（ドラッグで複数列）</div>
+                    <div class="mode-item lang-en">③ Columns (drag to select)</div>
+                    <div class="mode-item lang-ja">④ セル範囲（自由選択）</div>
+                    <div class="mode-item lang-en">④ Cell range (free select)</div>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <section class="container">
+        <h2 class="section-title lang-ja">v2.0 でできること</h2>
+        <h2 class="section-title lang-en">What's New in v2.0</h2>
+        <p class="section-sub lang-ja">Excel 派も Markdown 派も、同じ操作感で。</p>
+        <p class="section-sub lang-en">Same workflow for Excel and Markdown users.</p>
+
+        <div class="feature-grid">
+            <div class="feature-card">
+                <span class="icon">📝</span>
+                <h3 class="lang-ja">Markdown 出力</h3>
+                <h3 class="lang-en">Markdown Output</h3>
+                <p class="lang-ja">Obsidian、Notion、GitHub、AI チャットへそのまま貼り付け。表構造を保持します。</p>
+                <p class="lang-en">Paste directly into Obsidian, Notion, GitHub, or AI chats with structure intact.</p>
+            </div>
+            <div class="feature-card">
+                <span class="icon">📊</span>
+                <h3 class="lang-ja">Excel (TSV) 出力</h3>
+                <h3 class="lang-en">Excel (TSV) Output</h3>
+                <p class="lang-ja">スプレッドシートに崩れず貼り付け。業務レポートやデータ整理に。</p>
+                <p class="lang-en">Paste cleanly into spreadsheets for reports and data workflows.</p>
+            </div>
+            <div class="feature-card">
+                <span class="icon">🎯</span>
+                <h3 class="lang-ja">4つの抽出モード</h3>
+                <h3 class="lang-en">4 Extraction Modes</h3>
+                <p class="lang-ja">表全体・行・列・範囲から必要な部分だけを選んでコピー。</p>
+                <p class="lang-en">Copy the full table, rows, columns, or a custom cell range.</p>
+            </div>
+            <div class="feature-card">
+                <span class="icon">🔒</span>
+                <h3 class="lang-ja">端末内で完結</h3>
+                <h3 class="lang-en">Privacy First</h3>
+                <p class="lang-ja">データは外部サーバーへ送信されません。すべてブラウザ内で処理。</p>
+                <p class="lang-en">No data leaves your device. Everything runs locally in the browser.</p>
+            </div>
+            <div class="feature-card">
+                <span class="icon">🤖</span>
+                <h3 class="lang-ja">AI 分析の精度 UP</h3>
+                <h3 class="lang-en">Better AI Analysis</h3>
+                <p class="lang-ja">崩れた表より Markdown の方が AI の回答精度が上がり、聞き返しも減ります。</p>
+                <p class="lang-en">Structured Markdown helps AI give more accurate answers with fewer follow-ups.</p>
+            </div>
+            <div class="feature-card">
+                <span class="icon">⚡</span>
+                <h3 class="lang-ja">ワンクリック操作</h3>
+                <h3 class="lang-en">One-Click Workflow</h3>
+                <p class="lang-ja">拡張アイコン → 形式選択 → 範囲指定 → 貼り付け。シンプルな 3 ステップ。</p>
+                <p class="lang-en">Icon → pick format → select range → paste. Three simple steps.</p>
+            </div>
+        </div>
+    </section>
+
+    <section class="container">
+        <h2 class="section-title lang-ja">使い方</h2>
+        <h2 class="section-title lang-en">How to Use</h2>
+        <div class="steps">
+            <div class="step-card">
+                <h3 class="lang-ja">表があるページを開く</h3>
+                <h3 class="lang-en">Open a page with a table</h3>
+                <p class="lang-ja">料金表、比較表、スペック表など、コピーしたい Web ページへ。</p>
+                <p class="lang-en">Navigate to any page with pricing, comparison, or spec tables.</p>
+            </div>
+            <div class="step-card">
+                <h3 class="lang-ja">形式を選んで範囲指定</h3>
+                <h3 class="lang-en">Choose format &amp; range</h3>
+                <p class="lang-ja">アイコンをクリック → Excel または Markdown → 表・行・列・範囲を選択。</p>
+                <p class="lang-en">Click the icon → Excel or Markdown → select table, row, column, or range.</p>
+            </div>
+            <div class="step-card">
+                <h3 class="lang-ja">貼り付け</h3>
+                <h3 class="lang-en">Paste</h3>
+                <p class="lang-ja">Obsidian / Excel / Notion などで Cmd+V (Mac) / Ctrl+V (Win)。</p>
+                <p class="lang-en">Paste into Obsidian, Excel, Notion, etc. with Cmd+V or Ctrl+V.</p>
+            </div>
+        </div>
+    </section>
+
+    <section class="demo-section">
+        <div class="container">
+            <h2 class="section-title lang-ja">デモ：この表で試してみる</h2>
+            <h2 class="section-title lang-en">Demo: Try It on This Table</h2>
+            <p class="section-sub lang-ja">拡張機能をインストール後、このページの表を選択してコピーできます。</p>
+            <p class="section-sub lang-en">After installing, select and copy the table below on this page.</p>
+
+            <div class="demo-box">
+                <table class="demo-table" id="demo-table">
+                    <thead>
+                        <tr>
+                            <th><span class="lang-ja">プラン</span><span class="lang-en">Plan</span></th>
+                            <th><span class="lang-ja">価格</span><span class="lang-en">Price</span></th>
+                            <th><span class="lang-ja">機能</span><span class="lang-en">Features</span></th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>Free</td>
+                            <td><span class="lang-ja">¥0</span><span class="lang-en">$0</span></td>
+                            <td><span class="lang-ja">基本コピー</span><span class="lang-en">Basic copy</span></td>
+                        </tr>
+                        <tr>
+                            <td>Pro</td>
+                            <td><span class="lang-ja">無料*</span><span class="lang-en">Free*</span></td>
+                            <td><span class="lang-ja">Markdown + 4モード</span><span class="lang-en">Markdown + 4 modes</span></td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+            <p class="demo-hint lang-ja">* TableSnap Pro は Chrome ウェブストアで無料提供しています。</p>
+            <p class="demo-hint lang-en">* TableSnap Pro is free on the Chrome Web Store.</p>
+
+            <div class="md-preview">
+                <span class="comment lang-ja"># Markdown 出力イメージ</span>
+                <span class="comment lang-en"># Markdown output example</span><br><br>
+                | Plan | Price | Features |<br>
+                | --- | --- | --- |<br>
+                | Free | ¥0 | Basic copy |<br>
+                | Pro | Free | Markdown + 4 modes |
+            </div>
+        </div>
+    </section>
+
+    <section class="container">
+        <h2 class="section-title lang-ja">こんな人におすすめ</h2>
+        <h2 class="section-title lang-en">Who It's For</h2>
+        <div class="tag-grid" style="margin-top: 32px;">
+            <span class="tag lang-ja">Obsidian でナレッジベースを作っている</span>
+            <span class="tag lang-en">Building a knowledge base in Obsidian</span>
+            <span class="tag lang-ja">Cursor × Obsidian 連携</span>
+            <span class="tag lang-en">Cursor × Obsidian workflow</span>
+            <span class="tag lang-ja">Web 調査メモを Markdown で残したい</span>
+            <span class="tag lang-en">Saving web research as Markdown</span>
+            <span class="tag lang-ja">AI に表データを渡す前に整形したい</span>
+            <span class="tag lang-en">Cleaning tables before AI analysis</span>
+            <span class="tag lang-ja">Excel にも Markdown にも同じ操作で</span>
+            <span class="tag lang-en">Same tool for Excel &amp; Markdown</span>
+        </div>
+    </section>
+
+    <section class="container">
+        <div class="cta-block">
+            <h2 class="lang-ja">TableSnap Pro v2.0 を試す</h2>
+            <h2 class="lang-en">Try TableSnap Pro v2.0</h2>
+            <p class="lang-ja">ピン留めして、いつでもワンクリックで表をコピー。</p>
+            <p class="lang-en">Pin the extension for one-click table copying anytime.</p>
+            <a class="btn btn-primary" href="https://chromewebstore.google.com/detail/tablesnap-pro/lhkdcojfnpencjimnbkhbigkjbnpdjdg" target="_blank" rel="noopener">
+                <span class="lang-ja">Chrome ウェブストアへ</span>
+                <span class="lang-en">Chrome Web Store</span>
+            </a>
+            <br>
+            <a class="note-link" href="https://note.com/ktech_dev/n/n969b2f51ffe4" target="_blank" rel="noopener">
+                <span class="lang-ja">v2.0 紹介記事を読む →</span>
+                <span class="lang-en">Read the v2.0 announcement →</span>
+            </a>
+        </div>
+    </section>
+
+    <footer>
+        <div class="container">
+            <p>&copy; 2026 k-Tech Studio. Stay curious.</p>
+            <div class="footer-links">
+                <a href="https://chromewebstore.google.com/detail/tablesnap-pro/lhkdcojfnpencjimnbkhbigkjbnpdjdg" target="_blank" rel="noopener">Chrome Web Store</a>
+                <a href="https://github.com/crossbeat461-a11y/tablesnap-pro" target="_blank" rel="noopener">GitHub</a>
+                <a href="https://note.com/ktech_dev/m/mfb632f0481c2" target="_blank" rel="noopener">note マガジン</a>
+                <a href="https://x.com/K_Tech_Dev" target="_blank" rel="noopener">X</a>
+                <button type="button" onclick="togglePolicy()" class="btn-inline">About this site</button>
+            </div>
+
+            <div id="policy-box">
+                <h3 style="color: var(--primary); margin-top: 0;">About this site</h3>
+                <p style="font-size: 0.85rem; color: var(--text-muted);">
+                    <span class="lang-ja">当サイト（k-Tech Studio）で公開している情報の利用は、利用者自身の責任において行ってください。TableSnap Pro は Google Chrome 拡張機能です。Chrome ウェブストアの利用規約が適用されます。</span>
+                    <span class="lang-en">Use of information on this k-Tech Studio site is at your own risk. TableSnap Pro is a Google Chrome extension subject to the Chrome Web Store terms.</span>
+                </p>
+                <p style="text-align: center; margin-top: 20px;">
+                    <button type="button" onclick="togglePolicy()" style="background: var(--primary); color: #fff; border: none; padding: 10px 28px; border-radius: 999px; cursor: pointer;">Close</button>
+                </p>
+            </div>
+        </div>
+    </footer>
+
+    <script>
+        function setLang(lang) {
+            document.documentElement.setAttribute('lang', lang);
+            document.querySelectorAll('.lang-btn').forEach(function (b) { b.classList.remove('active'); });
+            document.getElementById('btn-' + lang).classList.add('active');
+        }
+
+        function togglePolicy() {
+            var box = document.getElementById('policy-box');
+            var show = box.style.display !== 'block';
+            box.style.display = show ? 'block' : 'none';
+            if (show) box.scrollIntoView({ behavior: 'smooth' });
+        }
+    </script>
+</body>
+</html>
