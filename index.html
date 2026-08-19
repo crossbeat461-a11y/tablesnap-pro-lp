@@ -69,6 +69,9 @@
     }
     </script>
     <link rel="icon" href="favicon.png" type="image/png">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Noto+Sans+JP:wght@400;500;700&display=swap" rel="stylesheet">
 
     <style>
         :root {
@@ -89,7 +92,7 @@
 
         body {
             margin: 0;
-            font-family: "Segoe UI", "Hiragino Sans", "BIZ UDPGothic", sans-serif;
+            font-family: "Inter", "Noto Sans JP", "Hiragino Sans", "BIZ UDPGothic", sans-serif;
             background: var(--bg);
             color: var(--text);
             line-height: 1.75;
@@ -99,6 +102,37 @@
             max-width: 1040px;
             margin: 0 auto;
             padding: 0 24px;
+        }
+
+        .site-mark {
+            position: fixed;
+            top: 18px;
+            left: 16px;
+            z-index: 1100;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            text-decoration: none;
+            color: var(--primary);
+            font-weight: 700;
+            font-size: 0.82rem;
+            letter-spacing: 0.01em;
+        }
+        .site-mark-badge {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            height: 28px;
+            padding: 0 7px;
+            border-radius: 8px;
+            background: var(--primary);
+            color: #fff;
+            font-size: 0.72rem;
+            letter-spacing: -0.04em;
+        }
+        .site-mark:hover { opacity: 0.8; }
+        @media (max-width: 640px) {
+            .site-mark-name { display: none; }
         }
 
         /* Language switch */
@@ -589,6 +623,11 @@
 </head>
 <body>
 
+    <a class="site-mark" href="https://k-tech-lab.vercel.app/" target="_blank" rel="noopener noreferrer">
+        <span class="site-mark-badge">{K}</span>
+        <span class="site-mark-name">K-Tech Studio</span>
+    </a>
+
     <div class="lang-switch">
         <button type="button" onclick="setLang('ja')" id="btn-ja" class="lang-btn active">JP</button>
         <button type="button" onclick="setLang('en')" id="btn-en" class="lang-btn">EN</button>
@@ -829,7 +868,7 @@
                 <a href="https://buymeacoffee.com/k_tech_studio" target="_blank" rel="noopener noreferrer">☕ Buy Me a Coffee</a>
                 <a href="https://k-tech-lab.vercel.app/" target="_blank" rel="noopener noreferrer">K-Tech Studio</a>
             </div>
-            <p class="footer-copy">TableSnap Pro v2.0.6 · &copy; 2026 k-Tech Studio. Stay curious.</p>
+            <p class="footer-copy">TableSnap Pro v2.0.6 · &copy; 2026 K-Tech Studio. Stay curious.</p>
             <div class="footer-meta">
                 <button type="button" onclick="togglePolicy()" class="btn-inline-text">About this site</button>
             </div>
