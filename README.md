@@ -35,6 +35,8 @@ Root Directory に `index.html` があるため、そのまま公開されます
 - note v2.0 記事: https://note.com/ktech_dev/n/n969b2f51ffe4
 - note マガジン: https://note.com/ktech_dev/m/mfb632f0481c2
 - 拡張機能リポジトリ: https://github.com/crossbeat461-a11y/tablesnap-pro
+- K-Tech Studio: https://k-tech-lab.vercel.app/
+- Buy Me a Coffee: https://buymeacoffee.com/k_tech_studio
 
 ## ファイル構成
 
