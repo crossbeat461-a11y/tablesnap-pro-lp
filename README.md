@@ -1,6 +1,10 @@
 # TableSnap Pro — Landing Page
 
-TableSnap Pro v2.0 の公式ランディングページ（静的 HTML）。
+TableSnap Pro v2.0 の**公式ランディングページ**（静的 HTML）。公開 URL は [tablesnap-pro-lp.vercel.app](https://tablesnap-pro-lp.vercel.app/)。
+
+**正本はこのリポジトリです。** PC・Mac とも LP の pull / push は **ここだけ** にしてください。
+
+旧 `tablesnap-lp` はアーカイブ済みで、履歴が別系統です。`git pull` も `git reset --hard` も **しないでください**（古い LP が復活したり、マージに失敗します）。フォルダが残っていても編集・push はせず、この `tablesnap-pro-lp` だけを使います。
 
 ## 内容
 
